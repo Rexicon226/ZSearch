@@ -1,0 +1,14 @@
+[Unit]
+Description=Mount unit for core22, revision 484
+Before=snapd.service
+After=zfs-mount.service
+
+[Mount]
+What=/var/lib/snapd/snaps/core22_484.snap
+Where=/var/lib/snapd/snap/core22/484
+Type=squashfs
+Options=nodev,context=system_u:object_r:snappy_snap_t:s0,ro,x-gdu.hide,x-gvfs-hide
+LazyUnmount=yes
+
+[Install]
+WantedBy=default.target multi-user.target

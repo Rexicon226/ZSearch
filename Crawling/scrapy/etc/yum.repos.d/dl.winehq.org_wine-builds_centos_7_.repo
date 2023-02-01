@@ -1,0 +1,4 @@
+[dl.winehq.org_wine-builds_centos_7_]
+name=created by dnf config-manager from https://dl.winehq.org/wine-builds/centos/7/
+baseurl=https://dl.winehq.org/wine-builds/centos/7/
+enabled=0
