@@ -1,4 +1,0 @@
-FALLBACK=false
-PROGRAM=/usr/sbin/setup
-USER=root
-GUI=no

@@ -1,5 +1,0 @@
-# All supported drivers listed here are loaded when service starts
-SUPPORTED_DRIVERS="libfc fcoe bnx2fc"
-
-# Add --debug to enable debug messages
-FCOEMON_OPTS="--syslog"

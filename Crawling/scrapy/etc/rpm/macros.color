@@ -1,5 +1,0 @@
-%_colordir %_datadir/color
-%_syscolordir %_colordir
-%_icccolordir %_colordir/icc
-%_cmmscolordir %_colordir/cmms
-%_settingscolordir %_colordir/settings

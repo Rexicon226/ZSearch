@@ -1,1 +1,0 @@
-/usr/share/Modules/init/csh
