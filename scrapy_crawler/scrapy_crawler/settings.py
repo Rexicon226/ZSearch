@@ -52,21 +52,34 @@ COOKIES_ENABLED = False
 
 # Enable or disable downloader middlewares
 # See https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
-# DOWNLOADER_MIDDLEWARES = {
-#    'scrapy_crawler.middlewares.ScrapyCrawlerDownloaderMiddleware': 543,
-# }
+DOWNLOADER_MIDDLEWARES = {
+    'scrapeops_scrapy.middleware.retry.RetryMiddleware': 550,
+    'scrapy.downloadermiddlewares.retry.RetryMiddleware': None,
+}
 
 # Enable or disable extensions
 # See https://docs.scrapy.org/en/latest/topics/extensions.html
-# EXTENSIONS = {
-#    'scrapy.extensions.telnet.TelnetConsole': None,
-# }
+EXTENSIONS = {
+    'scrapeops_scrapy.extension.ScrapeOpsMonitor': 500,
+}
 
 # Configure item pipelines
 # See https://docs.scrapy.org/en/latest/topics/item-pipeline.html
 # ITEM_PIPELINES = {
 #    'scrapy_crawler.pipelines.ScrapyCrawlerPipeline': 300,
 # }
+
+
+SCRAPEOPS_SETTINGS_EXCLUSION_LIST = [
+    'API_KEY',
+    'APIKEY',
+    'SECRET_KEY',
+    'SECRETKEY'
+]
+
+SCRAPEOPS_API_KEY = 'e970922c-bc5e-4004-8df9-d6740fec520c'
+
+DEPTH_LIMIT = 3
 
 # Enable and configure the AutoThrottle extension (disabled by default)
 # See https://docs.scrapy.org/en/latest/topics/autothrottle.html

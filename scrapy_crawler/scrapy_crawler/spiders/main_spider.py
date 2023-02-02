@@ -1,7 +1,7 @@
 import scrapy
 import sqlite3
 import csv
-
+from scrapy.linkextractors import LinkExtractor
 
 def append(url, title, desc):
     file = "crawler.db"
@@ -21,6 +21,11 @@ class PoliteSpider(scrapy.Spider):
         for i in range(0, len(data)):
             start_urls.append("https://" + data[i][1])
 
+    link_extractor = LinkExtractor()
+
     def parse(self, response):
+        for link in self.link_extractor.extract_links(response):
+            yield scrapy.Request(link.url, callback=self.parse)
+
         append(response.url, response.css("title::text").get(),
                response.css("meta[name=description]::attr(content)").get())
