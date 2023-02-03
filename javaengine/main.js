@@ -47,24 +47,14 @@ function urlMetric(row, perfect_url, prompt, second_pass) {
     let used_domain = domain.hostname + domain.pathname;
     let urldata;
     if (row.url != null) {
-        if (row.url.includes(prompt)) {
-            urldata = similarity(perfect_url, used_domain);
-            if (urldata != null) {
-                second_pass.push({
-                    url: row.url,
-                    title: row.title,
-                    desc: row.desc,
-                    urlcount: urldata,
-                    total: urldata
-                });
-            }
-        } else {
+        urldata = similarity(perfect_url, used_domain);
+        if (urldata != null) {
             second_pass.push({
                 url: row.url,
                 title: row.title,
                 desc: row.desc,
-                urlcount: 0,
-                total: 0
+                urlcount: urldata,
+                total: urldata
             });
         }
     }
@@ -73,7 +63,7 @@ function urlMetric(row, perfect_url, prompt, second_pass) {
 
 function Search(prompt, rows) {
     let second_pass = [];
-    let perfect_url = "www" + prompt + ".com";
+    let perfect_url = prompt + ".com";
     let startTime = new Date().getTime();
 
     if (rows.length > 0) {
@@ -90,7 +80,7 @@ function Search(prompt, rows) {
 
     let endTime = new Date().getTime();
     let timeDiff = endTime - startTime;
-    console.log(second_pass[0]);
+    console.log(second_pass.splice(0, 5));
     console.log("Time: " + timeDiff + "ms");
 }
 

@@ -1,14 +1,21 @@
 {
   "name": "javaengine",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "version": "0.0.1",
+  "description": "A search engine in java",
+  "main": "main.js",
+  "bin": "main.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "",
-  "license": "ISC",
+  "author": "Sinon",
+  "license": "GNU",
   "dependencies": {
     "sqlite3": "^5.1.4"
+  },
+  "pkg": {
+    "scripts": "main.js",
+    "targets": [ "node18-win-x64" ],
+    "assets" : ["crawler.db"],
+    "outputPath": "bin"
   }
 }
