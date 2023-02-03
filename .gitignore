@@ -1,0 +1,9 @@
+.idea
+.vscode
+javaengine/node_modules
+javaengine/crawler.db
+scrapy_crawler/top-1m.csv
+zengine/.zigmod
+zengine/zig-cache
+zengine/zig-out
+zengine/libs
