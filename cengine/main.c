@@ -1,10 +1,8 @@
-#include <stddef.h>
-#include <stdlib.h>
+#include "stdlib.h"
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
 #include <time.h>
-#include<windows.h>
 
 int min_value(int a, int b)
 {
@@ -75,15 +73,13 @@ float similarity(char *s1, char *s2) {
 }
 
 int main(){
-
   clock_t t;
   t = clock();
-  float metric = similarity("Stackverflow", "ssss");
+  for (int i = 0; i < 10000; i++) {
+    float metric = similarity("Teljwioadiojwiodioawdios", "Tesawojdawiodjiojwit");
+  }
   t = clock() - t;
+
   double time_taken = ((double)t)/CLOCKS_PER_SEC;
-
-  printf("Time: %.7f\n", time_taken);
-  printf("%f\n", metric);;
-
-  return 0;
+  printf("Time Taken Avg: %.4fms\n", time_taken/10);
 }
