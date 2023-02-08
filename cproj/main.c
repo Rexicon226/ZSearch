@@ -4,13 +4,16 @@
 #include <ctype.h>
 #include <malloc.h>
 #include <time.h>
+
+#include "sqlite/sqlite3.h"
+
+#define UNCONST(type, var) (*(type*)&(var))
+
 enum
 {
     MAX_ROWS = 30000,
     MAX_STABLE_ROWS = 10000,
 };
-
-#include "sqlite/sqlite3.h"
 
 char* copy_string(const char* s)
 {
@@ -23,6 +26,19 @@ char* copy_string(const char* s)
     strcpy_s(s2, size, s);
     return s2;
 }
+
+char* copy_sqlite_string(const unsigned char* s)
+{
+    if (s == NULL)
+    {
+        return NULL;
+    }
+    const char* temp = UNCONST(char*,s);
+    const int size = (int)strlen(temp) + 1;
+    char* s2 = malloc(size);
+    strcpy_s(s2, size, temp);
+    return s2;
+} 
 
 int min_value(int a, int b)
 {
@@ -138,22 +154,23 @@ float url_metric(char* row[], const char* perfect_url, char* prompt)
 
 
 
-char* get_prompt(char* prompt)
+float get_prompt(char* prompt)
 {
-    const clock_t start_total = clock();
     sqlite3* db;
     sqlite3_stmt* stmt;
+    const clock_t start_total = clock();
     sqlite3_open("crawler.db", &db);
-    sqlite3_prepare_v2(db, "SELECT * FROM crawles LIMIT 260000", -1, &stmt, 0);
+    const char* query = "SELECT * FROM crawles LIMIT 30000";
+    sqlite3_prepare_v2(db, query, -1, &stmt, 0);
 
     char* rows[MAX_ROWS][3] = {{"0"}};
 
     for (int i = 0; i < MAX_ROWS; i++)
     {
         sqlite3_step(stmt);
-        rows[i][0] = copy_string((char*)sqlite3_column_text(stmt, 0));
-        rows[i][1] = copy_string((char*)sqlite3_column_text(stmt, 1));
-        rows[i][2] = copy_string((char*)sqlite3_column_text(stmt, 2));
+        rows[i][0] = copy_sqlite_string(sqlite3_column_text(stmt, 0));
+        rows[i][1] = copy_sqlite_string(sqlite3_column_text(stmt, 1));
+        rows[i][2] = copy_sqlite_string(sqlite3_column_text(stmt, 2));
     }
 
     const clock_t end_total = clock();
@@ -180,12 +197,12 @@ char* get_prompt(char* prompt)
     const clock_t end = clock();
     const double cpu_time_used = ((double)(end - start)) / CLOCKS_PER_SEC;
     printf("Time taken to search:  %.3f ms\n", cpu_time_used * 1000);    
-    return "NULL";
+    return best_url[0];
 }
 
 int main(void)
 {
     char* prompt = "amazon";
-    printf("%s\n", get_prompt(prompt));
+    printf("%f\n", (float)get_prompt(prompt));
     return 0;
 }
