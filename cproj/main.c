@@ -4,196 +4,56 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <windows.h>
+
+#include "util.h"
 
 #include "sqlite/sqlite3.h"
 
-#define UNCONST(type, var) (*(type*)&(var))
-
 enum
 {
-    max_rows = 260000,
-    max_stable_rows = 50000,
+    max_rows = 250000,
+    max_stable_rows = 30000,
 };
 
-void swap(float a, float b) 
+void progressbar(int i, int count)
 {
-    const float temp = a;
-    a = b;
-    b = temp;
-}
-
-void swap_int(int a, int b) 
-{
-    const int temp = a;
-    a = b;
-    b = temp;
-}
- 
-int partition(float arr[], int indices[], int left, int right) 
-{
-    const float pivot = arr[right];
-    int i = left - 1;
- 
-    for (int j = left; j <= right - 1; j++) 
+    static int last_percent = 0;
+    const int percent = (int)((double)i / count * 100.0);
+    if (percent > last_percent)
     {
-        if (arr[j] >= pivot) 
+        printf("\rProgress: [");
+        for (int n = 0; n < 100; n += 2)
         {
-            i++;
-            swap(arr[i], arr[j]);
-            swap_int(indices[i], indices[j]);
-        }
-    }
-    swap(arr[i + 1], arr[right]);
-    swap_int(indices[i + 1], indices[right]);
-    return i + 1;
-}
-
-char* copy_string(const char* s)
-{
-    if (s == NULL)
-    {
-        return NULL;
-    }
-    const int size = (int)strlen(s) + 1;
-    char* s2 = malloc(size);
-    strcpy(s2, s);
-    return s2;
-}
-
-char* copy_sqlite_string(const unsigned char* s)
-{
-    if (s == NULL)
-    {
-        return NULL;
-    }
-    const char* temp = UNCONST(char*, s);
-    const int size = (int)strlen(temp) + 1;
-    char* s2 = malloc(size);
-    strcpy(s2, temp);
-    return s2;
-}
-
-int min_value(const int a, const int b)
-{
-    return a > b ? b : a;
-}
-
-char* to_lower_case(const char* str)
-{
-    const size_t len = strlen(str);
-    char* lower = calloc(len + 1, sizeof(char));
-    for (size_t i = 0; i < len; ++i)
-    {
-        lower[i] = (char)tolower(str[i]);
-    }
-    return lower;
-}
-
-int edit_distance(const char* s1, const char* s2)
-{
-    s1 = to_lower_case(s1);
-    s2 = to_lower_case(s2);
-
-    char* costs = malloc((strlen(s2) + 1) * sizeof(char));
-
-    for (size_t i = 0; i <= strlen(s1); i++)
-    {
-        int last_value = (int)i;
-
-        for (unsigned int j = 0; j <= strlen(s2); j++)
-        {
-            if (i == 0)
-            {
-                costs[j] = (char)j;
-            }
+            if (n < percent)
+                printf("=");
             else
-            {
-                if (j > 0)
-                {
-                    int new_value = (unsigned char)costs[j - 1];
-                    if (s1[i - 1] != s2[j - 1])
-                    {
-                        new_value = min_value(min_value(new_value, last_value), costs[j]) + 1;
-                    }
-                    costs[j - 1] = (char)last_value;
-                    last_value = new_value;
-                }
+                printf(" ");
+        }
+        printf("] %d%%", percent);
+        if (fflush(stdout))
+            printf("Error flushing stdout");
+        last_percent = percent;
+    }
+    if (i == count - 1)
+        printf("\n");
+}
+
+
+void sort_elements(int *index_map, float *elements, const int count) {
+    elements[0] = 0;
+    for (int i = 0; i < count; i++) {
+        for (int j = i + 1; j < count; j++) {
+            if (elements[i] < elements[j]) {
+                const float temp = elements[i];
+                elements[i] = elements[j];
+                elements[j] = temp;
+                const int temp2 = index_map[i];
+                index_map[i] = index_map[j];
+                index_map[j] = temp2;
             }
         }
-        if (i > 0)
-        {
-            costs[strlen(s2)] = (char)last_value;
-        }
     }
-    return costs[strlen(s2)];
-}
-
-float similarity(const char* s1, const char* s2)
-{
-    const char* longer = s1;
-    const char* shorter = s2;
-
-    if (strlen(s1) < strlen(s2))
-    {
-        longer = s2;
-        shorter = s1;
-    }
-
-    const int longer_length = (int)strlen(longer);
-
-    if (longer_length == 0)
-    {
-        return 1;
-    }
-
-    return (float)(longer_length - edit_distance(longer, shorter)) / (float)longer_length;
-}
-
-void test_performance(void)
-{
-    clock_t t = clock();
-    for (int i = 0; i < 100000; i++)
-    {
-        similarity("Test", "Tes");
-    }
-
-    t = clock() - t;
-    
-    const double time_taken = (double)t / CLOCKS_PER_SEC;
-    printf("Time Taken Avg: %.6f micros\n", time_taken * 10);
-}
-
-char* request_prompt(void)
-{
-    char* prompt = malloc(50 * sizeof(char));
-    printf("Enter a prompt: ");
-    if (fgets(prompt, 50, stdin) == NULL)
-    {
-        printf("Error reading input\nInput Size Limit: 50");
-    }
-
-    prompt[strcspn(prompt, "\n")] = 0;
-
-    return prompt;
-}
-
-float url_metric(char* row[], const char* perfect_url, char* prompt)
-{
-    const char* used_domain = row[0];
-    const float urldata = similarity(perfect_url, used_domain);
-    return urldata;
-}
-
-int compare_floats(const void *a, const void *b)
-{
-    const float x = *(float *)a;
-    const float y = *(float *)b;
-    
-    if (x < y)
-        return 1;
-    if (x > y)
-        return -1;
-    return 0;
 }
 
 
@@ -208,13 +68,27 @@ float get_prompt(char* prompt)
     const char* query = "Select * FROM crawles";
 
     sqlite3_prepare_v2(db, query, -1, &stmt, 0);
-
-    float url_metric_values[max_rows] = {0};
-
-    int count = 0;
+    
+    
+    char* best_rows[max_stable_rows][3];
+    int best_rows_index = 0;
 
     for (int n = 0; n < max_rows / max_stable_rows; n++)
     {
+            
+        int count = 0;
+        
+        printf("Round: %i\n", n);
+        
+        float url_metric_values[max_stable_rows] = {0};
+
+        for (int url_count = 0; url_count < max_stable_rows; url_count++)
+        {
+            url_metric_values[url_count] = 0;
+            url_metric_values[url_count] = 0;
+            url_metric_values[url_count] = 0;
+        }
+        
         const clock_t start_db = clock();
         
         sqlite3_step(stmt);
@@ -231,7 +105,7 @@ float get_prompt(char* prompt)
 
         const clock_t end_db = clock();
         const double cpu_time_used_db = (double)(end_db - start_db) / CLOCKS_PER_SEC;
-        printf("Time taken to get DB:  %.3f ms\n", cpu_time_used_db * 1000);
+        printf("Time taken to get DB:  %.0f ms\n", cpu_time_used_db * 1000);
 
         const clock_t start = clock();
 
@@ -244,45 +118,54 @@ float get_prompt(char* prompt)
             row[0] = rows[i][0];
             count++;
             const float urlm = url_metric(row, perfect_url, prompt);
-            
-            url_metric_values[i + n * max_stable_rows] = urlm;
-            
+            url_metric_values[i] = urlm;
         }
+
+        int *indices = malloc(count * sizeof(int));
+
+        for (int count_i = 0; count_i < count; count_i++)
+        {
+            indices[count_i] = count_i;
+        }   
+        
+        sort_elements(indices, url_metric_values, count);
+
+        for (int i = 0; i < 20; i++)
+        {
+            if (best_rows_index < max_stable_rows)
+            {
+                best_rows[best_rows_index][0] = rows[indices[i]][0];
+                best_rows_index++;
+            }
+        }
+
+        free(indices);
 
         const clock_t end = clock();
         const double cpu_time_used = (double)(end - start) / CLOCKS_PER_SEC;
-        printf("Time taken to get metric:  %.3f ms\n", cpu_time_used * 1000);
+        printf("Time taken to get metric:  %.0f ms\n", cpu_time_used * 1000);
     }
 
-    
-    const clock_t start_sort = clock();
-    int *indices = malloc(count * sizeof(int));
+    sqlite3_finalize(stmt);
+    sqlite3_close(db);
 
-    for (int count_i = 0; count_i < count; count_i++)
+    for (int o = 0; o < 20; o++)
     {
-        indices[count_i] = count_i;
-    }
-
-    printf("Sorted url_metric_values array: \n");
-    for (int i = 0; i < 100; i++)
-    {
-        printf("%f %i\n", (float)url_metric_values[i], (int)indices[i]);
-    }
-    const clock_t end_sort = clock();
-    const double cpu_time_used_sort = (double)(end_sort - start_sort) / CLOCKS_PER_SEC;
-    printf("Time taken to sort:  %.3f ms\n", cpu_time_used_sort * 1000);
+        printf("%s\n", best_rows[o][0]);
+    }   
 
     const clock_t end_total = clock();
 
     const double cpu_time_used_total = (double)(end_total - start_total) / CLOCKS_PER_SEC;
-    printf("Time taken:  %.3f ms\n", cpu_time_used_total * 1000);
+    printf("Time taken:  %.0f ms\n", cpu_time_used_total * 1000);
     
-    return (float)count;
+    return 0;
 }
 
 int main(void)
 {
-    char* prompt = "amazon";
+    char* prompt = "amzon";
     printf("%f\n", (float)get_prompt(prompt));
+    //test_performance();
     return 0;
 }
